@@ -1,4 +1,4 @@
-# zero-trust-cop
+# zero-trust-thief
 
 **A zero-trust, cryptographically verifiable pursuit–evasion game between two
 mutually distrusting reinforcement-learning agents, played over a real wire.**
@@ -23,8 +23,8 @@ Verified OK
 |---|---|
 | Dec-POMDP model & pursuit–evasion dynamics | [§1](#1-project-overview) |
 | FastMCP orchestration & wire protocol | [§4](#4-wire-protocol-and-local-p2p-simulation) |
-| Strategy (Q-learning, pheromone belief, deception) | [§3](#3-reinforcement-learning-and-convergence) |
-| Performance curves | [§3 — convergence](#empirical-convergence) |
+| Strategy — ThiefBrain (deception, bluffing, evasion) | [§3](#3-strategy--the-thiefbrain) |
+| Performance / learning curves | [§3 — convergence](#empirical-convergence) |
 | Live GUI & Replay App | [§7](#7-tkinter-gui-live-heatmap-and-replay-viewer) |
 | Cross-repository links | [§0](#0-the-two-repositories) |
 
@@ -41,11 +41,11 @@ the other, and they meet only over the authenticated wire.
 
 | Role | Repository |
 |---|---|
-| **Cop / police** (this repo) | https://github.com/aviayeli/zero-trust-cop |
-| **Thief / evader** — *cross-link* | **https://github.com/aviayeli/zero-trust-thief** |
+| **Thief / evader** (this repo) | https://github.com/aviayeli/zero-trust-thief |
+| **Cop / police** — *cross-link* | **https://github.com/aviayeli/zero-trust-cop** |
 
-> **Cross-repository link:** the evading half of this pair lives at
-> **https://github.com/aviayeli/zero-trust-thief**. Both peers share one
+> **Cross-repository link:** the pursuing half of this pair lives at
+> **https://github.com/aviayeli/zero-trust-cop**. Both peers share one
 > engine and one wire protocol; they differ in which policy they load and
 > which `config/<role>/` workspace they run from.
 
@@ -252,7 +252,35 @@ the registered surface, and a mutation that re-registers it fails the suite.
 
 ---
 
-## 3. Reinforcement learning and convergence
+## 3. Strategy — the ThiefBrain
+
+### The deception model — `intent: 'truth' | 'lie'`
+
+The thief is an **evader**: `survival_thief` pays **10** for lasting all 35
+turns and `capture_thief` only **5** for being caught. Its bluffing policy is
+a **deterministic inversion** — it claims the opposite of what it plays:
+
+```
+police  move=MOVE:N  intent='truth'    thief  move=MOVE:N  intent='lie'
+```
+
+**The deception baseline is deliberately weak, and saying why matters more
+than the number:** a 100 %-deterministic liar is exactly as predictable as an
+honest peer. The EVASION, by contrast, is no longer weak: giving the thief the
+distance rule as its primary took it from 9.5% survival to 93.0% against our
+own strongest cop. Once the cop's `BeliefTracker` drives the honesty rate to 0, inverting
+the claim recovers the true move perfectly. Only a *mixed* strategy conceals
+anything. `STAY` is its own opposite (D4), so a thief that stays tells the
+truth that turn — documented, not patched.
+
+Evasion is framed on the **pursuer's relative bearing**, not absolute
+squares, so an escape generalises. The trained table holds 3000 entries across
+1232 states, topping out at **5.7780** — above `capture_thief` (5) but far
+short of the survival payoff of 10, because a pool of adversaries means most
+reachable states still end in a capture against *someone*. The evasion strength
+is in the breadth of the table, not the height of its values: 78.0% survival
+against a heuristic pursuer it never trained against, where the self-play table
+managed 2.2%.
 
 ### Q-learning setup
 
@@ -309,6 +337,11 @@ only: the score above is untouched by them
 ### Empirical convergence
 
 Offline self-play, 2,000 games, seed `20260801`, ε decayed once per game.
+Read from the **thief's** side this is a *survival* curve. It is retained as
+the record of the SELF-PLAY series; the shipped tables now come from
+diverse-opponent training (`scripts.train_diverse`, 10,000 episodes against a
+pool), where the opponent changes every episode and a single capture curve no
+longer describes what the evader faced.
 
 | Benchmarked result | Value |
 |---|---|
@@ -320,7 +353,7 @@ Offline self-play, 2,000 games, seed `20260801`, ε decayed once per game.
 Cop capture rate per 200-game block:
 
 ```
-capture rate, by 200-game block          seed 20260801
+thief SURVIVAL rate (100% − capture)     seed 20260801
 100% ┤
      │●───●───●
  75% ┤         ╲●
@@ -332,11 +365,11 @@ capture rate, by 200-game block          seed 20260801
   0% ┼────┬───┬───┬───┬───┬───┬───┬───┬───┬───
      0   200 400 600 800 1k  1.2k 1.4k 1.6k 2k
 
-games    0– 200   68.5%      games 1000–1200   46.0%
-games  200– 400   69.5%      games 1200–1400   47.5%
-games  400– 600   70.5%      games 1400–1600   37.5%
-games  600– 800   64.5%      games 1600–1800   28.0%
-games  800–1000   56.0%      games 1800–2000   35.0%
+games    0– 200   31.5%      games 1000–1200   54.0%
+games  200– 400   30.5%      games 1200–1400   52.5%
+games  400– 600   29.5%      games 1400–1600   62.5%
+games  600– 800   35.5%      games 1600–1800   72.0%
+games  800–1000   44.0%      games 1800–2000   65.0%
 ```
 
 The curve runs DOWNWARD, and that is the result rather than a defect: this is
