@@ -74,6 +74,71 @@ them by literal anchor.
 
 ---
 
+## League record — three graded series
+
+Every figure below is read from the sealed artifacts in `logs/aviayeli/`, and
+every series was settled with the opponent before either side filed.
+
+| # | opponent | our roles (SG1–6) | score | sub-games | result |
+|---|---|---|--:|:-:|---|
+| 1 | bb-ai-12 | cop/thief alternating | 30 : 90 | 0–6 | loss |
+| 2 | **ZeroOne0** | cop/thief alternating | **60 : 40** | **4–2** | **win** |
+| 3 | SMNGRP05 | cop/thief alternating | 30 : 90 | 0–6 | loss |
+
+**120 : 220 across three graded series, one win.** All three carry
+`mutual_agreement.confirmed = true` and were reported as a base64
+`application/json` attachment, never as body text.
+
+| series | game_uid | play commit | settlement sha256 |
+|---|---|---|---|
+| bb-ai-12 | `521727a1-e4d5-3c92-8f0a-82dc5a77e6fc` | `032dde02` | `418b5c02…f287271` |
+| ZeroOne0 | `ff90bd18-f873-981a-e1ca-0b89e6f9f03c` | `b32ffb1c` | `c39d331c…8af23ee6` |
+| SMNGRP05 | `a4b060fe-52d3-220f-1f82-9896fd54b2df` | `6ec4460e` | `061a74a8…db8cce92` |
+
+The ZeroOne0 series was additionally settled **off the wire** against an
+independently derived 3997-byte consensus scope, digest
+`5077306a3703467941ce7593bcf805a022c9f162588acc4f3feca97a045b0373` — both
+teams computed it from their own artifacts and reached the identical value.
+
+### Cryptographic verification actually performed
+
+| opponent | their records re-hashed | our records re-hashed |
+|---|--:|--:|
+| ZeroOne0 | 206 / 206 | 200 / 200 |
+| SMNGRP05 | 165 / 165 | — |
+| bb-ai-12 | 0 / 0 — see below | 178 / 178 |
+
+bb-ai-12's `submit_audit` replies carried `{"ok": true}` and disclosed **no
+records**, so their chain was never cross-verified by us. That is stated
+rather than glossed: the agreement there rests on their verdict alone, which
+is a materially weaker claim than the other two.
+
+## Cop policy: the benchmark that chose the strategy
+
+`match_policy_mode` is not a guess. The distance rule and the Q-table were
+measured against four opponent profiles, 500 episodes each
+(`docs/BENCHMARK_THAW_COP.md`, raw data in `docs/benchmark_thaw.json`).
+
+| opponent profile | arm | capture rate | mean steps | STAY moves | longest STAY |
+|---|---|--:|--:|--:|--:|
+| A random | **thawed** | **100.0 %** | 10.5 | **0** | **0** |
+| A random | unthawed | 99.2 % | 8.9 | 166 | 4 |
+| B greedy | **thawed** | 0.0 % | — | **0** | **0** |
+| B greedy | unthawed | 0.0 % | — | 1000 | 6 |
+| C bluffer | **thawed** | 0.0 % | — | **0** | **0** |
+| C bluffer | unthawed | 0.0 % | — | 2875 | **23** |
+| D corner | **thawed** | 100.0 % | 12.0 | **0** | **0** |
+| D corner | unthawed | 100.0 % | 12.0 | 0 | 0 |
+
+The thaw does not buy capture rate against B and C — both arms score zero.
+What it removes is the **freeze**: 2,875 STAY moves and a 23-turn stall
+against the bluffer, a cop resting on a belief its own observations had
+already refuted. `max_consecutive_stay` caps that at 3 (PRD 18).
+
+Reported honestly: against B and C the cop still does not capture. The
+benchmark is here because it decided a design question, not because it
+flatters the result.
+
 ## 0. The two repositories
 
 This submission is one half of a **two-repository pair**. Each peer is an

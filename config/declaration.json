@@ -10,5 +10,6 @@
   "mcp_servers": {
     "cop": "http://127.0.0.1:8802/mcp",
     "thief": "http://127.0.0.1:8801/mcp"
-  }
+  },
+  "counted_games_played": 2
 }
