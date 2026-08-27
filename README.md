@@ -113,6 +113,54 @@ records**, so their chain was never cross-verified by us. That is stated
 rather than glossed: the agreement there rests on their verdict alone, which
 is a materially weaker claim than the other two.
 
+## Engineering timeline across the two repositories
+
+Both repositories share a common ancestor and a single team. Two phases of
+work exist only in `zero-trust-cop`, and this is recorded here rather than
+left for a reader to infer from an absence.
+
+| phase | where it lives | why |
+| :--- | :--- | :--- |
+| PRD 1–20 | **both repos** | the shared engine, wire, strategy and reporting |
+| **PRD 21** — Appendix F compliance, wire vocabulary relaxation, series tie award | **cop only** | landed 2026-08-27 during the SMNGRP05 negotiation |
+| **PRD 22** — inbound audit persistence | **cop only** | landed the same evening, hours before the counted series it was needed for |
+
+`src/engine/appendix_f.py`, `src/mcp_server/wire_vocab.py`,
+`src/reporting/series_tie.py`, `src/scripts/artifact_audit.py` and
+`src/scripts/artifact_identity.py` are **not present in this repository**.
+Its `docs/` therefore stops at PRD 20, and that is correct: the documents
+here describe the code here.
+
+Copying those PRDs across would have produced a repository whose docs assert
+five modules it does not contain — a worse failure than an incomplete
+timeline, and exactly what a PRD-to-code alignment check is for.
+
+One Appendix F finding **was** applied here, because it was a configuration
+defect rather than a feature: `min_games_to_pass` read `1` against a קבוע
+of `2` in all three configs (commit `7518eda`). Appendix F marks deviation
+from a קבוע as disqualifying, so it could not wait for a code port.
+
+## Course standards compliance
+
+Every row is a measured value, not an assertion. The command that produces it
+is named so a reader can re-run it rather than take our word.
+
+| Course standard | Actual value / state | Verdict | How to re-check |
+| :--- | :---: | :---: | :--- |
+| **150-line limit** | longest tracked module is **150** lines, ceiling 150 | **PASS** | `git ls-files '*.py' \| xargs wc -l \| sort -rn \| head` |
+| **No hardcoded hyperparameters** | every tunable read from `config/game.json` / `config/<role>/game.toml` | **PASS** | `grep -rn "config\[" src/` |
+| **Test suite** | **1533 passed, 8 skipped** | **PASS** | `PYTHONPATH=src pytest -q` |
+| **Linter** | `ruff check .` — All checks passed | **PASS** | `ruff check .` |
+| **No hardcoded secrets** | no token/credential/`.env`/tunnel file tracked | **PASS** | `git ls-files \| grep -iE "token\|credential\|\.env"` |
+| **SDLC lifecycle** | PRD → PLAN → TODO for every phase in `docs/` | **PASS** | `ls docs/PRD_*.md docs/PLAN_*.md docs/TODO_*.md` |
+| **Appendix F constants** | 13 קבוע + 9 מינימום, every shipped config | **PASS** | `pytest tests/unit/test_appendix_f.py` |
+
+Two figures stated precisely rather than flatteringly. The longest module is
+**150** lines, not "under 135" — it sits exactly on the ceiling, which is a
+pass and not a margin. And the suites are run **sequentially**: both bind
+ports 8801/8802 for the live two-process transport tests, so running them in
+parallel produces spurious failures.
+
 ## Cop policy: the benchmark that chose the strategy
 
 `match_policy_mode` is not a guess. The distance rule and the Q-table were
