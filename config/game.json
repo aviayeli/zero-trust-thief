@@ -54,7 +54,7 @@
     "watchdog_timeout_sec": 60,
     "num_games": 6,
     "diversity_reward": 10,
-    "min_games_to_pass": 1,
+    "min_games_to_pass": 2,
     "max_games_per_team": 10,
     "token_budget_per_series": 200000
   },
