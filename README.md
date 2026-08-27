@@ -163,6 +163,11 @@ parallel produces spurious failures.
 
 ## Cop policy: the benchmark that chose the strategy
 
+![Cop policy capture rate by opponent profile — manhattan_primary vs qtable_primary](docs/policy_benchmark.png)
+
+*Measured, not estimated: every figure is re-derived from a real run by `tests/scripts/test_benchmark_plan_claims.py`, so a retrain fails the suite rather than stranding the chart.*
+
+
 `match_policy_mode` is not a guess. The distance rule and the Q-table were
 measured against four opponent profiles, 500 episodes each
 (`docs/BENCHMARK_THAW_COP.md`, raw data in `docs/benchmark_thaw.json`).
